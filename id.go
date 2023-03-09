@@ -1,4 +1,11 @@
-// Package xid is a globally unique id generator suited for web scale
+// This Fork used less byte (8 to match bigint SQL representation)
+//   - 4-byte value representing the seconds since the Unix epoch,
+//   - 1-byte random initial value,
+//   - 1-byte process id (container)
+//   - 2-byte counter, starting with a random value.
+
+
+// (Original) Package xid is a globally unique id generator suited for web scale
 //
 // Xid is using Mongo Object ID algorithm to generate globally unique ids:
 // https://docs.mongodb.org/manual/reference/object-id/
@@ -64,7 +71,7 @@ type ID [rawLen]byte
 
 const (
 	encodedLen = 20 // string encoded len
-	rawLen     = 12 // binary raw len
+	rawLen     = 8 // binary raw len
 
 	// encoding stores a custom version of the base32 encoding with lower case
 	// letters.
@@ -83,6 +90,8 @@ var (
 
 	// pid stores the current process id
 	pid = os.Getpid()
+	
+	randomIdInit = randInt()
 
 	nilID ID
 
@@ -148,18 +157,13 @@ func NewWithTime(t time.Time) ID {
 	var id ID
 	// Timestamp, 4 bytes, big endian
 	binary.BigEndian.PutUint32(id[:], uint32(t.Unix()))
-	// Machine, first 3 bytes of md5(hostname)
-	id[4] = machineID[0]
-	id[5] = machineID[1]
-	id[6] = machineID[2]
-	// Pid, 2 bytes, specs don't specify endianness, but we use big endian.
-	id[7] = byte(pid >> 8)
-	id[8] = byte(pid)
-	// Increment, 3 bytes, big endian
-	i := atomic.AddUint32(&objectIDCounter, 1)
-	id[9] = byte(i >> 16)
-	id[10] = byte(i >> 8)
-	id[11] = byte(i)
+	// Pid, first 1 bytes of md5(hostname)
+	id[4] = byte(pid)	  
+	id[5] = randomIdInit[0:0]
+	// Increment, 2 bytes, big endian
+	i := atomic.AddUint32(&objectIDCounter, 1)	
+	id[6] = byte(i >> 8)
+	id[7] = byte(i)
 	return id
 }
 
@@ -291,16 +295,16 @@ func (id ID) Time() time.Time {
 	return time.Unix(secs, 0)
 }
 
-// Machine returns the 3-byte machine id part of the id.
+// Machine returns the 1-byte machine id part of the id.
 // It's a runtime error to call this method with an invalid id.
 func (id ID) Machine() []byte {
-	return id[4:7]
+	return id[4:4]
 }
 
 // Pid returns the process id part of the id.
 // It's a runtime error to call this method with an invalid id.
 func (id ID) Pid() uint16 {
-	return binary.BigEndian.Uint16(id[7:9])
+	return binary.BigEndian.Uint16(id[7:7])
 }
 
 // Counter returns the incrementing value part of the id.
