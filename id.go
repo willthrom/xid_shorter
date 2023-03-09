@@ -183,7 +183,11 @@ func (id ID) String() string {
 	return *(*string)(unsafe.Pointer(&text))
 }
 
-func (id ID) Int64 {
+func (id ID) Int64 int64 {
+	return int64(binary.BigEndian.Uint64(id[:]))
+}
+
+func (id ID) Int64 uint64 {
 	return uint64(binary.BigEndian.Uint64(id[:]))
 }
 
