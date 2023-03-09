@@ -216,8 +216,8 @@ func (id ID) MarshalJSON() ([]byte, error) {
 
 // encode by unrolling the stdlib base32 algorithm + removing all safe checks
 func encode(dst, id []byte) {
-	_ = dst[19]
-	_ = id[11]
+	_ = dst[13]
+	_ = id[7]
 
 	/*dst[19] = encoding[(id[11]<<4)&0x1F]
 	dst[18] = encoding[(id[11]>>1)&0x1F]
@@ -275,7 +275,7 @@ func (id *ID) UnmarshalJSON(b []byte) error {
 
 // decode by unrolling the stdlib base32 algorithm + customized safe check.
 func decode(id *ID, src []byte) bool {
-	_ = src[19]
+	_ = src[13]
 	_ = id[7]
 
 	/*id[11] = dec[src[17]]<<6 | dec[src[18]]<<1 | dec[src[19]]>>4
