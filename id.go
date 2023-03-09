@@ -5,6 +5,8 @@
 //   - 2-byte counter, starting with a random value.
 
 
+// Main purpose is to generate an int (Big int 8 bytes) so transforming to string is not a priority here
+
 // (Original) Package xid is a globally unique id generator suited for web scale
 //
 // Xid is using Mongo Object ID algorithm to generate globally unique ids:
@@ -70,7 +72,7 @@ import (
 type ID [rawLen]byte
 
 const (
-	encodedLen = 20 // string encoded len
+	encodedLen = 13 // string encoded len
 	rawLen     = 8 // binary raw len
 
 	// encoding stores a custom version of the base32 encoding with lower case
@@ -181,7 +183,11 @@ func (id ID) String() string {
 	return *(*string)(unsafe.Pointer(&text))
 }
 
-// Encode encodes the id using base32 encoding, writing 20 bytes to dst and return it.
+func (id ID) Int64 {
+	return uint64(binary.BigEndian.Uint64(id[:]))
+}
+
+// Encode encodes the id using base32 encoding, writing 13 bytes to dst and return it.
 func (id ID) Encode(dst []byte) []byte {
 	encode(dst, id[:])
 	return dst
@@ -210,14 +216,15 @@ func encode(dst, id []byte) {
 	_ = dst[19]
 	_ = id[11]
 
-	dst[19] = encoding[(id[11]<<4)&0x1F]
+	/*dst[19] = encoding[(id[11]<<4)&0x1F]
 	dst[18] = encoding[(id[11]>>1)&0x1F]
 	dst[17] = encoding[(id[11]>>6)&0x1F|(id[10]<<2)&0x1F]
 	dst[16] = encoding[id[10]>>3]
 	dst[15] = encoding[id[9]&0x1F]
 	dst[14] = encoding[(id[9]>>5)|(id[8]<<3)&0x1F]
 	dst[13] = encoding[(id[8]>>2)&0x1F]
-	dst[12] = encoding[id[8]>>7|(id[7]<<1)&0x1F]
+	dst[12] = encoding[id[8]>>7|(id[7]<<1)&0x1F]*/
+	dst[12] = encoding[(id[7]<<1)&0x1F]
 	dst[11] = encoding[(id[7]>>4)&0x1F|(id[6]<<4)&0x1F]
 	dst[10] = encoding[(id[6]>>1)&0x1F]
 	dst[9] = encoding[(id[6]>>6)&0x1F|(id[5]<<2)&0x1F]
@@ -273,9 +280,9 @@ func decode(id *ID, src []byte) bool {
 	if encoding[(id[11]<<4)&0x1F] != src[19] {
 		return false
 	}
-	id[10] = dec[src[16]]<<3 | dec[src[17]]>>2
+	/*id[10] = dec[src[16]]<<3 | dec[src[17]]>>2
 	id[9] = dec[src[14]]<<5 | dec[src[15]]
-	id[8] = dec[src[12]]<<7 | dec[src[13]]<<2 | dec[src[14]]>>3
+	id[8] = dec[src[12]]<<7 | dec[src[13]]<<2 | dec[src[14]]>>3*/
 	id[7] = dec[src[11]]<<4 | dec[src[12]]>>1
 	id[6] = dec[src[9]]<<6 | dec[src[10]]<<1 | dec[src[11]]>>4
 	id[5] = dec[src[8]]<<3 | dec[src[9]]>>2
@@ -310,7 +317,7 @@ func (id ID) Pid() uint16 {
 // Counter returns the incrementing value part of the id.
 // It's a runtime error to call this method with an invalid id.
 func (id ID) Counter() int32 {
-	b := id[9:12]
+	b := id[6:7]
 	// Counter is stored as big-endian 3-byte value
 	return int32(uint32(b[0])<<16 | uint32(b[1])<<8 | uint32(b[2]))
 }
