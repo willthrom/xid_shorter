@@ -1,4 +1,16 @@
-# Globally Unique ID Generator
+# Globally Unique ID Generator (This version is for 8 bytes BIGINT SQL representation)
+
+For obvious reason collison can happen more often than the original representation if this is used for large global projects. But the purpose of this for is to be used for single service (multi instance) where we don't expect to generate more than a couple of thousand of ID per second.
+
+That is the reason this fork takes less bytes for the counters and the initial bytes (PID and MACHINE ID)
+
+- 4-byte value representing the seconds since the Unix epoch,
+- 1-byte machine identifier,
+- 1-byte Init Random
+- 2-byte counter, starting with a random value.
+
+
+# Original description (Globally Unique ID Generator)
 
 [![godoc](http://img.shields.io/badge/godoc-reference-blue.svg?style=flat)](https://godoc.org/github.com/rs/xid) [![license](http://img.shields.io/badge/license-MIT-red.svg?style=flat)](https://raw.githubusercontent.com/rs/xid/master/LICENSE) [![Build Status](https://travis-ci.org/rs/xid.svg?branch=master)](https://travis-ci.org/rs/xid) [![Coverage](http://gocover.io/_badge/github.com/rs/xid)](http://gocover.io/github.com/rs/xid)
 
