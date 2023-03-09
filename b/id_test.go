@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/rs/xid"
+	xid "github.com/willthrom/xid_shorter"
 )
 
 func TestIDValue(t *testing.T) {

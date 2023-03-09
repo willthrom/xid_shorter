@@ -4,7 +4,6 @@
 //   - 1-byte process id (container)
 //   - 2-byte counter, starting with a random value.
 
-
 // Main purpose is to generate an int (Big int 8 bytes) so transforming to string is not a priority here
 
 // (Original) Package xid is a globally unique id generator suited for web scale
@@ -73,7 +72,7 @@ type ID [rawLen]byte
 
 const (
 	encodedLen = 13 // string encoded len
-	rawLen     = 8 // binary raw len
+	rawLen     = 8  // binary raw len
 
 	// encoding stores a custom version of the base32 encoding with lower case
 	// letters.
@@ -92,8 +91,8 @@ var (
 
 	// pid stores the current process id
 	pid = os.Getpid()
-	
-	randomIdInit = randInt()
+
+	randomIdInit uint8 = uint8(randInt() % 256)
 
 	nilID ID
 
@@ -160,10 +159,10 @@ func NewWithTime(t time.Time) ID {
 	// Timestamp, 4 bytes, big endian
 	binary.BigEndian.PutUint32(id[:], uint32(t.Unix()))
 	// Pid, first 1 bytes of md5(hostname)
-	id[4] = byte(pid)	  
-	id[5] = randomIdInit[0:0]
+	id[4] = byte(pid)
+	id[5] = randomIdInit
 	// Increment, 2 bytes, big endian
-	i := atomic.AddUint32(&objectIDCounter, 1)	
+	i := atomic.AddUint32(&objectIDCounter, 1)
 	id[6] = byte(i >> 8)
 	id[7] = byte(i)
 	return id
@@ -183,11 +182,11 @@ func (id ID) String() string {
 	return *(*string)(unsafe.Pointer(&text))
 }
 
-func (id ID) Int64 int64 {
+func (id ID) Int64() int64 {
 	return int64(binary.BigEndian.Uint64(id[:]))
 }
 
-func (id ID) Int64 uint64 {
+func (id ID) UInt64() uint64 {
 	return uint64(binary.BigEndian.Uint64(id[:]))
 }
 
@@ -277,14 +276,13 @@ func (id *ID) UnmarshalJSON(b []byte) error {
 // decode by unrolling the stdlib base32 algorithm + customized safe check.
 func decode(id *ID, src []byte) bool {
 	_ = src[19]
-	_ = id[11]
+	_ = id[7]
 
-	id[11] = dec[src[17]]<<6 | dec[src[18]]<<1 | dec[src[19]]>>4
+	/*id[11] = dec[src[17]]<<6 | dec[src[18]]<<1 | dec[src[19]]>>4
 	// check the last byte
 	if encoding[(id[11]<<4)&0x1F] != src[19] {
 		return false
-	}
-	/*id[10] = dec[src[16]]<<3 | dec[src[17]]>>2
+	}	id[10] = dec[src[16]]<<3 | dec[src[17]]>>2
 	id[9] = dec[src[14]]<<5 | dec[src[15]]
 	id[8] = dec[src[12]]<<7 | dec[src[13]]<<2 | dec[src[14]]>>3*/
 	id[7] = dec[src[11]]<<4 | dec[src[12]]>>1
@@ -309,21 +307,21 @@ func (id ID) Time() time.Time {
 // Machine returns the 1-byte machine id part of the id.
 // It's a runtime error to call this method with an invalid id.
 func (id ID) Machine() []byte {
-	return id[4:4]
+	return id[4:5]
 }
 
 // Pid returns the process id part of the id.
 // It's a runtime error to call this method with an invalid id.
-func (id ID) Pid() uint16 {
-	return binary.BigEndian.Uint16(id[7:7])
+func (id ID) Pid() uint8 {
+	return id[4]
 }
 
 // Counter returns the incrementing value part of the id.
 // It's a runtime error to call this method with an invalid id.
-func (id ID) Counter() int32 {
-	b := id[6:7]
+func (id ID) Counter() int16 {
+	b := id[6:8]
 	// Counter is stored as big-endian 3-byte value
-	return int32(uint32(b[0])<<16 | uint32(b[1])<<8 | uint32(b[2]))
+	return int16(uint32(b[0])<<8 | uint32(b[1]))
 }
 
 // Value implements the driver.Valuer interface.
