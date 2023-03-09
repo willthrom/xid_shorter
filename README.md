@@ -2,7 +2,7 @@
 
 For obvious reason collison can happen more often than the original representation if this is used for large global projects. But the purpose of this for is to be used for single service (multi instance) where we don't expect to generate more than a couple of thousand of ID per second.
 
-That is the reason this fork takes less bytes for the counters and the initial bytes (PID and MACHINE ID)
+That is the reason this fork takes less bytes for the counters and the initial bytes (PID)
 
 - 4-byte value representing the seconds since the Unix epoch,
 - 1-byte machine identifier,
@@ -102,6 +102,7 @@ println(guid.String())
 Get `xid` embedded info:
 
 ```go
+guid.Int64()
 guid.Machine()
 guid.Pid()
 guid.Time()
